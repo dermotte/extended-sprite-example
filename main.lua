@@ -1,5 +1,7 @@
 -- main.lua
 --- Bootstraps the scene and runs the generic sprite loop.
+---
+--- Controls: Space spawns a tank; F11 toggles fullscreen.
 local Config = require("config")
 local Sprite = require("sprite")
 local Tank   = require("tank")
@@ -18,17 +20,24 @@ local world = {
     height   = Config.window.height,
 }
 
+--- Creates a tank and registers it for update/draw and targeting.
+--- @param x number top-left x
+--- @param y number top-left y
 local function addTank(x, y)
     local tank = Tank.new(Config.assets.tank, x, y)
     sprites[#sprites + 1] = tank
     tanks[#tanks + 1] = tank
 end
 
+--- Creates a turret together with its static base.
+--- @param x number top-left x
+--- @param y number top-left y
 local function addTurret(x, y)
     sprites[#sprites + 1] = Sprite.new(Config.assets.towerBase, x, y)
     sprites[#sprites + 1] = Turret.new(Config.assets.tower, x, y)
 end
 
+--- Builds the initial scene from the layout in config.lua.
 function love.load()
     if love.system.getOS() == "Android" then
         love.window.setMode(0, 0, { fullscreen = true })
@@ -37,18 +46,23 @@ function love.load()
     -- Background must be added first so it draws underneath everything.
     sprites[#sprites + 1] = Sprite.new(Config.assets.map, 0, 0)
 
-    addTank(0, Config.tank.spawnY)
-    addTank(-64 * 2, Config.tank.spawnY + 16)
-    addTurret(64 * 12, 64 * 10)
-    addTurret(64 * 18, 64 * 7)
+    for _, spawn in ipairs(Config.scene.tankSpawns) do
+        addTank(spawn.x, spawn.y)
+    end
+    for _, spot in ipairs(Config.scene.turrets) do
+        addTurret(spot.x, spot.y)
+    end
 end
 
+--- Handles the demo's two keys: Space spawns a tank, F11 toggles fullscreen.
+--- @param key string the pressed key
 function love.keypressed(key)
     if key == "f11" then
         love.window.setFullscreen(not love.window.getFullscreen())
     elseif key == "space" then
         local spread = Config.tank.spawnSpread
-        addTank(-64, Config.tank.spawnY + love.math.random(-spread, spread))
+        addTank(Config.scene.spawnEdgeX,
+                Config.tank.spawnY + love.math.random(-spread, spread))
     end
 end
 
@@ -65,6 +79,8 @@ local function removeDead()
     end
 end
 
+--- Updates every live sprite once, then sweeps dead objects.
+--- @param dt number delta time in seconds
 function love.update(dt)
     -- Clamp spikes so a slow frame cannot tunnel a missile through a tank.
     dt = math.min(dt, Config.window.maxDt)
@@ -81,6 +97,7 @@ function love.update(dt)
     removeDead()
 end
 
+--- Draws every sprite in insertion order.
 function love.draw()
     for i = 1, #sprites do
         sprites[i]:draw()

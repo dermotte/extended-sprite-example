@@ -11,6 +11,9 @@ Sprite.__index = Sprite
 -- Textures are decoded once per path and shared by every sprite that uses them.
 local imageCache = {}
 
+--- Returns the cached texture for `path`, loading it on first use.
+--- @param path string asset path
+--- @return Image
 local function loadImage(path)
     local img = imageCache[path]
     if not img then
@@ -24,7 +27,7 @@ end
 --- @param imagePath string path to the texture
 --- @param x number top-left x
 --- @param y number top-left y
---- @return table
+--- @return table the new sprite
 function Sprite.new(imagePath, x, y)
     local img = loadImage(imagePath)
     return setmetatable({

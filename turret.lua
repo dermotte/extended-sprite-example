@@ -14,10 +14,10 @@ Turret.__index = Turret
 local C = Config.turret
 
 --- Creates a new turret.
---- @param imagePath string
---- @param x number
---- @param y number
---- @return table
+--- @param imagePath string path to the texture
+--- @param x number top-left x
+--- @param y number top-left y
+--- @return table the new turret
 function Turret.new(imagePath, x, y)
     local self = Sprite.new(imagePath, x, y)
     setmetatable(self, Turret)
@@ -27,7 +27,12 @@ function Turret.new(imagePath, x, y)
     return self
 end
 
---- Returns the nearest live tank within range, plus its offset from `self`.
+--- Returns the nearest live tank within range.
+--- @param self table the turret
+--- @param tanks table live tanks to search
+--- @return table|nil nearest tank, or nil if none is in range
+--- @return number dx offset from the turret centre to the tank centre
+--- @return number dy offset from the turret centre to the tank centre
 local function findNearestTank(self, tanks)
     local cx, cy = self:getCenter()
     local rangeSq = C.viewRange * C.viewRange
@@ -48,6 +53,7 @@ local function findNearestTank(self, tanks)
 end
 
 --- Aims at the nearest tank and fires a missile when the timer allows.
+--- Spawned missiles are appended to `world.missiles` and `world.sprites`.
 --- @param dt number delta time in seconds
 --- @param world table shared context: { sprites, tanks, missiles, width, height }
 function Turret:update(dt, world)

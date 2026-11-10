@@ -8,13 +8,13 @@ local Missile = setmetatable({}, { __index = Sprite })
 Missile.__index = Missile
 
 --- Creates a new missile.
---- @param imagePath string
---- @param x number
---- @param y number
+--- @param imagePath string path to the texture
+--- @param x number top-left x
+--- @param y number top-left y
 --- @param rotation number launch rotation (0 = facing up)
 --- @param maxSpeed number pixels per second
 --- @param accelDuration number seconds to reach full speed
---- @return table
+--- @return table the new missile
 function Missile.new(imagePath, x, y, rotation, maxSpeed, accelDuration)
     local self = Sprite.new(imagePath, x, y)
     setmetatable(self, Missile)
@@ -22,13 +22,14 @@ function Missile.new(imagePath, x, y, rotation, maxSpeed, accelDuration)
     self.rotation      = rotation or 0
     self.maxSpeed      = maxSpeed or 250
     self.accelDuration = accelDuration or 0.4
-    self.accelTimer    = 0
-    self.speed         = 0
+    self.accelTimer    = 0       -- seconds spent accelerating
+    self.speed         = 0       -- current speed in pixels per second
 
     return self
 end
 
---- Moves the missile, kills it off-map, and resolves tank collisions.
+--- Moves the missile, despawns it off-map, and on impact sets both the
+--- missile and the tank `dead`.
 --- @param dt number delta time in seconds
 --- @param world table shared context: { sprites, tanks, missiles, width, height }
 function Missile:update(dt, world)

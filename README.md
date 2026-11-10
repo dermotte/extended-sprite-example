@@ -1,12 +1,12 @@
 # Sprite Example
 
-A Love2D (LÖVE) demonstration of a sprite class system with inheritance, autonomous movement, turret targeting, and projectile combat.
+A LÖVE demonstration of a sprite class system with inheritance, autonomous movement, turret targeting, and projectile combat.
 
 ## Getting Started
 
 ### Prerequisites
 
-- [LÖVE (Love2D)](https://love2d.org/) version 11.5 or later
+- [LÖVE](https://love2d.org/) version 11.5 or later
 
 ### Running the Demo
 
@@ -19,7 +19,7 @@ love .
 Or specify the folder explicitly:
 
 ```bash
-love d:/projects/love2d/sprite-example
+love /path/to/sprite-example
 ```
 
 ### Controls
@@ -34,8 +34,9 @@ love d:/projects/love2d/sprite-example
 ```
 sprite-example/
 ├── assets/            # Image assets (tank.png, tower.png, rocket.png, map.png, etc.)
-├── config.lua         # Central tuning values and asset paths
-├── conf.lua           # LÖVE window configuration (title, size, fullscreen, etc.)
+├── config.lua         # Central tuning values, scene layout and asset paths
+├── conf.lua           # LÖVE window configuration (title, size, MSAA, orientation)
+├── LICENSE            # MIT license for the source code
 ├── main.lua           # Entry point; love.load/update/draw, scene tables, world context
 ├── missile.lua        # Missile class (extends Sprite) with eased-in movement
 ├── sprite.lua         # Base Sprite class (draw + update hook, texture cache)
@@ -53,8 +54,20 @@ sprite-example/
 | `turret.lua` | `Turret` class extending `Sprite`. Overrides `update()` to track the nearest tank in range, rotate toward it, and fire missiles at a fixed rate. |
 | `missile.lua` | `Missile` class extending `Sprite`. Overrides `update()` with quadratic ease-in movement, off-map despawn, and tank collision. |
 | `main.lua` | Bootstraps the scene, holds the shared `world` context (`sprites`, `tanks`, `missiles`), and runs the generic update/draw loops plus input. |
-| `config.lua` | Central tuning values (window, tank, turret, assets) used by the other modules. |
+| `config.lua` | Central tuning values, scene layout, and asset paths used by the other modules. |
 | `conf.lua` | LÖVE window configuration (1920×1080, non-resizable, MSAA 4x), read from `config.lua`. |
+
+## Configuration
+
+Tuning and layout live in `config.lua`. `conf.lua` reads `Config.window` before the window is created, and `main.lua` uses `Config.window.width`/`height` as the world bounds for missile despawn.
+
+| Group | Controls |
+|-------|----------|
+| `Config.window` | Title, size, resizability, MSAA, orientation, and the frame-time clamp |
+| `Config.assets` | Texture paths (cached by `sprite.lua`) |
+| `Config.tank` | Movement speed, turn duration, path thresholds, spawn row |
+| `Config.turret` | View range, fire rate, missile speed/acceleration, muzzle offset |
+| `Config.scene` | Initial tank/turret layout and the Space-spawn edge |
 
 ## Sprite System
 
@@ -81,10 +94,12 @@ function Sprite.new(imagePath, x, y)
 end
 ```
 
+`loadImage` is a module-level helper that caches each texture by path.
+
 Key design points:
 
 - **Instances are plain tables** with a metatable whose `__index` points to `Sprite`. Any method defined on `Sprite` (e.g. `Sprite:draw`, `Sprite:getCenter`) is available on all instances unless overridden.
-- **`Sprite:draw()`** renders the sprite centered at `(x + w/2, y + h/2)`, rotating around its center. The `x`/`y` fields store the top-left corner; the drawing function adds half-width/half-height as the origin offset so rotation is always around the sprite's center.
+- **`Sprite:draw()`** renders the sprite centred at `(x + w/2, y + h/2)`, rotating around its centre. The `x`/`y` fields store the top-left corner; the drawing function adds half-width/half-height as the origin offset so rotation is always around the sprite's centre.
 - **`Sprite:update(dt, world)`** is the shared behaviour hook. The base version is empty (static sprites); subclasses override it to add movement, targeting, or collision. `main.lua` calls it generically on every object, so behaviour lives entirely in the subclass.
 - **`dead`** is a flag a subclass can set during `update()`; `main.lua` sweeps dead objects out of the scene tables after updating.
 
@@ -94,12 +109,13 @@ Subclasses like `Tank`, `Turret`, and `Missile` follow the same two-step metatab
 
 ```lua
 -- 1. The class table inherits from Sprite
-setmetatable(Tank, { __index = Sprite })
+local Tank = setmetatable({}, { __index = Sprite })
+Tank.__index = Tank
 
 -- 2. Each instance inherits from the class table
 function Tank.new(imagePath, x, y)
     local self = Sprite.new(imagePath, x, y)
-    setmetatable(self, { __index = Tank })
+    setmetatable(self, Tank)
     -- add Tank-specific fields...
     return self
 end
@@ -131,9 +147,13 @@ Behaviours live entirely in the subclass `update()` methods:
 
 ## License
 
-The assets of this project are from Kenney.nl, please consult the web page to obtain information regarding the asset license. 
+### Assets
 
-This project's source code is licensed under the **MIT License**.
+The image assets are from [Kenney.nl](https://kenney.nl/). See their site for the asset license terms.
+
+### Source Code
+
+This project's source code is licensed under the **MIT License** (see [LICENSE](LICENSE)).
 
 ```
 MIT License

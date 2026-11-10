@@ -1,6 +1,9 @@
 -- tank.lua
 --- Tank: drives an autonomous path using a small state machine.
 --- Extends Sprite; only update() is overridden, drawing is inherited.
+---
+--- States: moving_right -> rotating_down -> moving_down -> rotating_right ->
+--- moving_right_2 -> stopped.
 local Config = require("config")
 local Sprite = require("sprite")
 
@@ -10,10 +13,10 @@ Tank.__index = Tank
 local C = Config.tank
 
 --- Creates a new tank.
---- @param imagePath string
---- @param x number
---- @param y number
---- @return table
+--- @param imagePath string path to the texture
+--- @param x number top-left x
+--- @param y number top-left y
+--- @return table the new tank
 function Tank.new(imagePath, x, y)
     local self = Sprite.new(imagePath, x, y)
     setmetatable(self, Tank)
@@ -35,6 +38,7 @@ local function turnToward(self, target, dt)
 end
 
 --- Advances the tank's movement state machine.
+--- The inherited world context is unused; tanks need no scene data.
 --- @param dt number delta time in seconds
 function Tank:update(dt)
     if self.state == "moving_right" then
